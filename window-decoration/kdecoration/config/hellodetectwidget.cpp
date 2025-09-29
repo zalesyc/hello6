@@ -29,7 +29,7 @@
 
 #include "hellodetectwidget.h"
 
-#include "hello.h"
+#include "../hello.h"
 
 #include <KWindowInfo>
 

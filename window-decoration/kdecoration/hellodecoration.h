@@ -25,9 +25,9 @@
 #include "hello.h"
 #include "hellosettings.h"
 
-#include <KDecoration2/Decoration>
-#include <KDecoration2/DecoratedClient>
-#include <KDecoration2/DecorationSettings>
+#include <KDecoration3/Decoration>
+#include <KDecoration3/DecoratedWindow>
+#include <KDecoration3/DecorationSettings>
 
 #include <QPalette>
 #include <QPropertyAnimation>
@@ -35,7 +35,7 @@
 
 #include <xcb/xcb.h>
 
-namespace KDecoration2
+namespace KDecoration3
 {
     class DecorationButton;
     class DecorationButtonGroup;
@@ -45,7 +45,7 @@ namespace Hello
 {
     class SizeGrip;
     class Button;
-    class Decoration : public KDecoration2::Decoration
+    class Decoration : public KDecoration3::Decoration
     {
         Q_OBJECT
 
@@ -61,7 +61,7 @@ namespace Hello
         virtual ~Decoration();
 
         //* paint
-        void paint(QPainter *painter, const QRect &repaintRegion) override;
+        void paint(QPainter *painter, const QRectF &repaintRegion) override;
 
         //* internal settings
         InternalSettingsPtr internalSettings() const
@@ -142,7 +142,7 @@ namespace Hello
         //@}
 
         public Q_SLOTS:
-        void init() override;
+        bool init() override;
 
         private Q_SLOTS:
         void reconfigure();
@@ -159,7 +159,7 @@ namespace Hello
         QPair<QRect,Qt::Alignment> captionRect() const;
 
         void createButtons();
-        void paintTitleBar(QPainter *painter, const QRect &repaintRegion);
+        void paintTitleBar(QPainter *painter, const QRectF &repaintRegion);
         void createShadow();
 
         //*@name border size
@@ -179,8 +179,8 @@ namespace Hello
         //@}
 
         InternalSettingsPtr m_internalSettings;
-        KDecoration2::DecorationButtonGroup *m_leftButtons = nullptr;
-        KDecoration2::DecorationButtonGroup *m_rightButtons = nullptr;
+        KDecoration3::DecorationButtonGroup *m_leftButtons = nullptr;
+        KDecoration3::DecorationButtonGroup *m_rightButtons = nullptr;
 
         //* size grip widget
         SizeGrip *m_sizeGrip = nullptr;
@@ -196,44 +196,44 @@ namespace Hello
     bool Decoration::hasBorders() const
     {
         if( m_internalSettings && m_internalSettings->mask() & BorderSize ) return m_internalSettings->borderSize() > InternalSettings::BorderNoSides;
-        else return settings()->borderSize() > KDecoration2::BorderSize::NoSides;
+        else return settings()->borderSize() > KDecoration3::BorderSize::NoSides;
     }
 
     bool Decoration::hasNoBorders() const
     {
         if( m_internalSettings && m_internalSettings->mask() & BorderSize ) return m_internalSettings->borderSize() == InternalSettings::BorderNone;
-        else return settings()->borderSize() == KDecoration2::BorderSize::None;
+        else return settings()->borderSize() == KDecoration3::BorderSize::None;
     }
 
     bool Decoration::hasNoSideBorders() const
     {
         if( m_internalSettings && m_internalSettings->mask() & BorderSize ) return m_internalSettings->borderSize() == InternalSettings::BorderNoSides;
-        else return settings()->borderSize() == KDecoration2::BorderSize::NoSides;
+        else return settings()->borderSize() == KDecoration3::BorderSize::NoSides;
     }
 
     bool Decoration::isMaximized() const
-    { return client().data()->isMaximized() && !m_internalSettings->drawBorderOnMaximizedWindows(); }
+    { return window()->isMaximized() && !m_internalSettings->drawBorderOnMaximizedWindows(); }
 
     bool Decoration::isMaximizedHorizontally() const
-    { return client().data()->isMaximizedHorizontally() && !m_internalSettings->drawBorderOnMaximizedWindows(); }
+    { return window()->isMaximizedHorizontally() && !m_internalSettings->drawBorderOnMaximizedWindows(); }
 
     bool Decoration::isMaximizedVertically() const
-    { return client().data()->isMaximizedVertically() && !m_internalSettings->drawBorderOnMaximizedWindows(); }
+    { return window()->isMaximizedVertically() && !m_internalSettings->drawBorderOnMaximizedWindows(); }
 
     bool Decoration::isLeftEdge() const
-    { return (client().data()->isMaximizedHorizontally() || client().data()->adjacentScreenEdges().testFlag( Qt::LeftEdge ) ) && !m_internalSettings->drawBorderOnMaximizedWindows(); }
+    { return (window()->isMaximizedHorizontally() || window()->adjacentScreenEdges().testFlag( Qt::LeftEdge ) ) && !m_internalSettings->drawBorderOnMaximizedWindows(); }
 
     bool Decoration::isRightEdge() const
-    { return (client().data()->isMaximizedHorizontally() || client().data()->adjacentScreenEdges().testFlag( Qt::RightEdge ) ) && !m_internalSettings->drawBorderOnMaximizedWindows(); }
+    { return (window()->isMaximizedHorizontally() || window()->adjacentScreenEdges().testFlag( Qt::RightEdge ) ) && !m_internalSettings->drawBorderOnMaximizedWindows(); }
 
     bool Decoration::isTopEdge() const
-    { return (client().data()->isMaximizedVertically() || client().data()->adjacentScreenEdges().testFlag( Qt::TopEdge ) ) && !m_internalSettings->drawBorderOnMaximizedWindows(); }
+    { return (window()->isMaximizedVertically() || window()->adjacentScreenEdges().testFlag( Qt::TopEdge ) ) && !m_internalSettings->drawBorderOnMaximizedWindows(); }
 
     bool Decoration::isBottomEdge() const
-    { return (client().data()->isMaximizedVertically() || client().data()->adjacentScreenEdges().testFlag( Qt::BottomEdge ) ) && !m_internalSettings->drawBorderOnMaximizedWindows(); }
+    { return (window()->isMaximizedVertically() || window()->adjacentScreenEdges().testFlag( Qt::BottomEdge ) ) && !m_internalSettings->drawBorderOnMaximizedWindows(); }
 
     bool Decoration::hideTitleBar() const
-    { return m_internalSettings->hideTitleBar() && !client().data()->isShaded(); }
+    { return m_internalSettings->hideTitleBar() && !window()->isShaded(); }
 
     bool Decoration::matchTitleBarColor() const
     { return m_internalSettings->matchTitleBarColor(); }

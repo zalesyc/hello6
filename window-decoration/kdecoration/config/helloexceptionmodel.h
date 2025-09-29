@@ -27,7 +27,7 @@
 
 #include "hellolistmodel.h"
 #include "hellosettings.h"
-#include "hello.h"
+#include "../hello.h"
 
 namespace Hello
 {

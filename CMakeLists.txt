@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.14)
 project(hello)
 
 set(WITH_COLOR_SCHEME      yes CACHE BOOL "Build with color-scheme")
@@ -11,13 +11,13 @@ if(WITH_COLOR_SCHEME)
   add_subdirectory(color-scheme)
 endif()
 
-if(WITH_KSTYLE)
-  add_subdirectory(kstyle)
-endif()
+# if(WITH_KSTYLE)
+#   add_subdirectory(kstyle)
+# endif()
 
-if(WITH_KWIN_EFFECTS)
-  add_subdirectory(kwin-effects)
-endif()
+# if(WITH_KWIN_EFFECTS)
+#   add_subdirectory(kwin-effects)
+# endif()
 
 if(WITH_PLASMA_THEME)
   add_subdirectory(plasma-theme)

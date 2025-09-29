@@ -72,7 +72,7 @@ namespace Hello
         //! flags
         Qt::ItemFlags flags(const QModelIndex &index) const override
         {
-            if (!index.isValid()) return nullptr;
+            if (!index.isValid()) return Qt::NoItemFlags;
             return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
         }
 

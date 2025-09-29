@@ -19,7 +19,7 @@
 #pragma once
 
 // own
-#include "hellocommon_export.h"
+// #include "hellocommon_export.h"
 
 // Qt
 #include <QColor>
@@ -30,7 +30,7 @@
 namespace Hello
 {
 
-class HELLOCOMMON_EXPORT BoxShadowRenderer
+class BoxShadowRenderer
 {
 public:
     // Compiler generated constructors & destructor are fine.

@@ -25,8 +25,8 @@
 // IN THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "ui_helloexceptiondialog.h"
-#include "hello.h"
+#include "ui/ui_helloexceptiondialog.h"
+#include "../hello.h"
 
 #include <QCheckBox>
 #include <QMap>

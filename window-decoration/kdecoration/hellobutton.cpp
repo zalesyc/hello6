@@ -21,7 +21,7 @@
  */
 #include "hellobutton.h"
 
-#include <KDecoration2/DecoratedClient>
+#include <KDecoration3/DecoratedWindow>
 #include <KColorUtils>
 
 #include <QPainter>
@@ -29,9 +29,9 @@
 namespace Hello
 {
 
-    using KDecoration2::ColorRole;
-    using KDecoration2::ColorGroup;
-    using KDecoration2::DecorationButtonType;
+    using KDecoration3::ColorRole;
+    using KDecoration3::ColorGroup;
+    using KDecoration3::DecorationButtonType;
 
 
     //__________________________________________________________________
@@ -53,9 +53,9 @@ namespace Hello
         setIconSize(QSize( height, height ));
 
         // connections
-        connect(decoration->client().data(), SIGNAL(iconChanged(QIcon)), this, SLOT(update()));
-        connect(decoration->settings().data(), &KDecoration2::DecorationSettings::reconfigured, this, &Button::reconfigure);
-        connect( this, &KDecoration2::DecorationButton::hoveredChanged, this, &Button::updateAnimationState );
+        connect(decoration->window(), SIGNAL(iconChanged(QIcon)), this, SLOT(update()));
+        connect(decoration->settings().get(), &KDecoration3::DecorationSettings::reconfigured, this, &Button::reconfigure);
+        connect( this, &KDecoration3::DecorationButton::hoveredChanged, this, &Button::updateAnimationState );
         if (decoration->objectName() == "applet-window-buttons") {
             connect(this, &Button::hoveredChanged, [=](bool hovered){
                 decoration->setButtonHovered(hovered);
@@ -80,7 +80,7 @@ namespace Hello
     }
             
     //__________________________________________________________________
-    Button *Button::create(DecorationButtonType type, KDecoration2::Decoration *decoration, QObject *parent)
+    Button *Button::create(DecorationButtonType type, KDecoration3::Decoration *decoration, QObject *parent)
     {
         if (auto d = qobject_cast<Decoration*>(decoration))
         {
@@ -89,32 +89,32 @@ namespace Hello
             {
 
                 case DecorationButtonType::Close:
-                b->setVisible( d->client().data()->isCloseable() );
-                QObject::connect(d->client().data(), &KDecoration2::DecoratedClient::closeableChanged, b, &Hello::Button::setVisible );
+                b->setVisible( d->window()->isCloseable() );
+                QObject::connect(d->window(), &KDecoration3::DecoratedWindow::closeableChanged, b, &Hello::Button::setVisible );
                 break;
 
                 case DecorationButtonType::Maximize:
-                b->setVisible( d->client().data() );
-                QObject::connect(d->client().data(), &KDecoration2::DecoratedClient::maximizeableChanged, b, &Hello::Button::setVisible );
+                b->setVisible( d->window() );
+                QObject::connect(d->window(), &KDecoration3::DecoratedWindow::maximizeableChanged, b, &Hello::Button::setVisible );
                 break;
 
                 case DecorationButtonType::Minimize:
-                b->setVisible( d->client().data()->isMinimizeable() );
-                QObject::connect(d->client().data(), &KDecoration2::DecoratedClient::minimizeableChanged, b, &Hello::Button::setVisible );
+                b->setVisible( d->window()->isMinimizeable() );
+                QObject::connect(d->window(), &KDecoration3::DecoratedWindow::minimizeableChanged, b, &Hello::Button::setVisible );
                 break;
 
                 case DecorationButtonType::ContextHelp:
-                b->setVisible( d->client().data()->providesContextHelp() );
-                QObject::connect(d->client().data(), &KDecoration2::DecoratedClient::providesContextHelpChanged, b, &Hello::Button::setVisible );
+                b->setVisible( d->window()->providesContextHelp() );
+                QObject::connect(d->window(), &KDecoration3::DecoratedWindow::providesContextHelpChanged, b, &Hello::Button::setVisible );
                 break;
 
                 case DecorationButtonType::Shade:
-                b->setVisible( d->client().data()->isShadeable() );
-                QObject::connect(d->client().data(), &KDecoration2::DecoratedClient::shadeableChanged, b, &Hello::Button::setVisible );
+                b->setVisible( d->window()->isShadeable() );
+                QObject::connect(d->window(), &KDecoration3::DecoratedWindow::shadeableChanged, b, &Hello::Button::setVisible );
                 break;
 
                 case DecorationButtonType::Menu:
-                QObject::connect(d->client().data(), &KDecoration2::DecoratedClient::iconChanged, b, [b]() { b->update(); });
+                QObject::connect(d->window(), &KDecoration3::DecoratedWindow::iconChanged, b, [b]() { b->update(); });
                 break;
 
                 default: break;
@@ -129,7 +129,7 @@ namespace Hello
     }
 
     //__________________________________________________________________
-    void Button::paint(QPainter *painter, const QRect &repaintRegion)
+    void Button::paint(QPainter *painter, const QRectF &repaintRegion)
     {
         Q_UNUSED(repaintRegion)
 
@@ -148,7 +148,7 @@ namespace Hello
         {
 
             const QRectF iconRect( geometry().topLeft(), m_iconSize );
-            decoration()->client().data()->icon().paint(painter, iconRect.toRect());
+            decoration()->window()->icon().paint(painter, iconRect.toRect());
 
 
         } else {
@@ -375,7 +375,7 @@ namespace Hello
     QColor Button::foregroundColor() const
     {
         auto d = qobject_cast<Decoration*>( decoration() );
-        auto c = d->client().data();
+        auto w = d->window();
         auto s = d->internalSettings()->buttonCustomColor();
         QColor customCloseColor = d->internalSettings()->customCloseColor();
         QColor customMinColor = d->internalSettings()->customMinColor();
@@ -413,20 +413,20 @@ namespace Hello
             buttonIcons == 3 || 
             ( buttonIcons == 0 ? isHovered() : hovered )) && buttonIcons != 4 ){
 
-            if ( c->isActive() && buttonIcons != 3 ){
+            if ( w->isActive() && buttonIcons != 3 ){
                 QColor color;
                 if( type() == DecorationButtonType::Close ) {
-                    if(c->isCloseable() ){
+                    if(w->isCloseable() ){
                         if(s){ color.setRgb(colorClose);
                         } else { color = customCloseColor; }
                     }
                 } else if( type() == DecorationButtonType::Maximize ) {
-                    if(c->isMaximizeable() ){
+                    if(w->isMaximizeable() ){
                         if(s){ color.setRgb(colorMaximize);
                         } else { color = customMaxColor; }
                     }
                 } else if( type() == DecorationButtonType::Minimize ) {
-                    if(c->isMinimizeable() ){
+                    if(w->isMinimizeable() ){
                         if(s){ color.setRgb(colorMinimize);
                         } else { color = customMinColor; }
                     }
@@ -456,7 +456,7 @@ namespace Hello
                     } else { return color.lighter(240); }
                 } else { return color.lighter(40); }
 
-            } else if ( c->isActive() && buttonIcons == 3 ){
+            } else if ( w->isActive() && buttonIcons == 3 ){
 
                 QColor color;
                 color = d->titleBarColor();
@@ -464,7 +464,7 @@ namespace Hello
                 QColor iconColor ( f ? Qt::white : y >= 128 ? color.lighter(40) : Qt::white );
                 return iconColor;
 
-            } else if ( !c->isActive() && buttonIcons == 3) {
+            } else if ( !w->isActive() && buttonIcons == 3) {
         
                 QColor color;
                 color = d->titleBarColor();
@@ -483,8 +483,8 @@ namespace Hello
 
         } else if( m_animation->state() == QPropertyAnimation::Running ) {
             
-            auto c = d->client().data();
-            if ( !c->isActive() ) {
+            auto w = d->window();
+            if ( !w->isActive() ) {
                 QColor color;
                 color = d->titleBarColor();
                 color.setAlpha(255*m_opacity);
@@ -548,7 +548,7 @@ namespace Hello
 
         }
 
-        auto c = d->client().data();
+        auto w = d->window();
         auto buttonIcons = d->internalSettings()->buttonIconsBox();
         auto s = d->internalSettings()->buttonCustomColor();
         QColor customCloseColor = d->internalSettings()->customCloseColor();
@@ -612,15 +612,15 @@ namespace Hello
 
             return d->fontColor();
 
-        } else if ( !c->isActive() && buttonIcons != 3 ) {
+        } else if ( !w->isActive() && buttonIcons != 3 ) {
 
             return luma;
 
-        } else if ( !c->isActive() && buttonIcons == 3 ) {
+        } else if ( !w->isActive() && buttonIcons == 3 ) {
 
             return QColor();
 
-        } else if ( c->isActive() && buttonIcons == 3 ) {
+        } else if ( w->isActive() && buttonIcons == 3 ) {
 
             return QColor();
 
@@ -628,21 +628,21 @@ namespace Hello
 
             QColor color;
             if( type() == DecorationButtonType::Close ) {
-                if(!c->isCloseable()){
+                if(!w->isCloseable()){
                     return luma;
                 } else {
                     if(s) { color.setRgb(colorClose);
                     } else { color = customCloseColor; }
                 }
             } else if( type() == DecorationButtonType::Maximize ) {
-                if(!c->isMaximizeable()){
+                if(!w->isMaximizeable()){
                     return luma;
                 } else {
                     if(s){ color.setRgb(colorMaximize);                  
                     } else { color = customMaxColor; }
                 }
             } else if( type() == DecorationButtonType::Minimize ) {
-                if(!c->isMinimizeable()){
+                if(!w->isMinimizeable()){
                     return luma;
                 } else {
                     if(s){ color.setRgb(colorMinimize);

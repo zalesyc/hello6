@@ -31,7 +31,7 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "hellosettings.h"
-#include "ui_hellodetectwidget.h"
+#include "ui/ui_hellodetectwidget.h"
 
 #include <QByteArray>
 #include <QCheckBox>
@@ -39,7 +39,7 @@
 #include <QEvent>
 #include <QLabel>
 
-#include <kwindowsystem.h>
+#include <KWindowInfo>
 
 namespace Hello
 {

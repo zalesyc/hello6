@@ -21,9 +21,6 @@
 // own
 #include "helloboxshadowrenderer.h"
 
-// auto-generated
-#include "config-hellocommon.h"
-
 // Qt
 #include <QPainter>
 

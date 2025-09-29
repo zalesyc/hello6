@@ -31,19 +31,20 @@
 
 #include <QDBusConnection>
 #include <QDBusMessage>
+
 // TODO: clean up the connectors and group them like they appear within the UI
 namespace Hello
 {
 
     //_________________________________________________________
-    ConfigWidget::ConfigWidget( QWidget* parent, const QVariantList &args ):
-        KCModule(parent, args),
+    ConfigWidget::ConfigWidget( QObject* parent, const KPluginMetaData &data ):
+        KCModule(parent, data),
         m_configuration( KSharedConfig::openConfig( QStringLiteral( "hellorc" ) ) ),
         m_changed( false )
     {
 
         // configuration
-        m_ui.setupUi( this );
+        m_ui.setupUi( this->widget() );
 
         // track ui changes
         connect( m_ui.titleAlignment, SIGNAL(currentIndexChanged(int)), SLOT(updateChanged()) );
@@ -336,7 +337,8 @@ namespace Hello
     //_______________________________________________
     void ConfigWidget::setChanged( bool value )
     {
-        emit changed( value );
+        // emit changed( value );
+        setNeedsSave(value);
     }
 
 }

@@ -20,11 +20,12 @@
 
 #include "hellosizegrip.h"
 
-#include <KDecoration2/DecoratedClient>
+#include <KDecoration3/DecoratedWindow>
 
 #include <QPainter>
 #include <QPolygon>
 #include <QTimer>
+#include <qnamespace.h>
 
 #if HELLO_HAVE_X11
 #include <QX11Info>
@@ -62,10 +63,10 @@ namespace Hello
         updatePosition();
 
         // connections
-        auto c = decoration->client().data();
-        connect( c, &KDecoration2::DecoratedClient::widthChanged, this, &SizeGrip::updatePosition );
-        connect( c, &KDecoration2::DecoratedClient::heightChanged, this, &SizeGrip::updatePosition );
-        connect( c, &KDecoration2::DecoratedClient::activeChanged, this, &SizeGrip::updateActiveState );
+        auto w = decoration->window();
+        connect( w, &KDecoration3::DecoratedWindow::widthChanged, this, &SizeGrip::updatePosition );
+        connect( w, &KDecoration3::DecoratedWindow::heightChanged, this, &SizeGrip::updatePosition );
+        connect( w, &KDecoration3::DecoratedWindow::activeChanged, this, &SizeGrip::updateActiveState );
 
         // show
         show();
@@ -99,7 +100,7 @@ namespace Hello
         #if HELLO_HAVE_X11
 
         if( !QX11Info::isPlatformX11() ) return;
-        auto c = m_decoration.data()->client().data();
+        auto w = m_decoration.data()->window();
 
         xcb_window_t windowId = c->windowId();
         if( windowId )
@@ -166,7 +167,7 @@ namespace Hello
                 break;
             }
 
-            case Qt::MidButton:
+            case Qt::MiddleButton:
             {
                 hide();
                 break;
@@ -191,7 +192,7 @@ namespace Hello
         #if HELLO_HAVE_X11
         if( !QX11Info::isPlatformX11() ) return;
 
-        auto c = m_decoration.data()->client().data();
+        auto w = m_decoration.data()->window();
         QPoint position(
             c->width() - GripSize - Offset,
             c->height() - GripSize - Offset );
@@ -213,7 +214,7 @@ namespace Hello
         auto connection( QX11Info::connection() );
 
         // client
-        auto c = m_decoration.data()->client().data();
+        auto w = m_decoration.data()->window();
 
         /*
         get root position matching position

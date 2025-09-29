@@ -48,7 +48,7 @@ namespace Hello
 
             // create new configuration
             InternalSettingsPtr configuration( new InternalSettings() );
-            configuration.data()->load();
+            configuration->load();
 
             // apply changes from exception
             configuration->setEnabled( exception.enabled() );
@@ -89,7 +89,7 @@ namespace Hello
         foreach( const InternalSettingsPtr& exception, _exceptions )
         {
 
-            writeConfig( exception.data(), config.data(), exceptionGroupName( index ) );
+            writeConfig( exception.get(), config.get(), exceptionGroupName( index ) );
             ++index;
 
         }
