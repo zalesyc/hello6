@@ -26,7 +26,7 @@
 #include "hello.h"
 #include "hellosettingsprovider.h"
 #include "config-hello.h"
-#include "config/helloconfigwidget.h"
+// #include "config/helloconfigwidget.h"
 
 #include "hellobutton.h"
 #include "hellosizegrip.h"
@@ -59,8 +59,8 @@ K_PLUGIN_FACTORY_WITH_JSON(
     HelloDecoFactory,
     "hello.json",
     registerPlugin<Hello::Decoration>();
-    registerPlugin<Hello::Button>(/*QStringLiteral("button")*/);
-    registerPlugin<Hello::ConfigWidget>(/*QStringLiteral("kcmodule")*/);
+    // registerPlugin<Hello::Button>(/*QStringLiteral("button")*/);
+    // registerPlugin<Hello::ConfigWidget>(/*QStringLiteral("kcmodule")*/);
 )
 
 

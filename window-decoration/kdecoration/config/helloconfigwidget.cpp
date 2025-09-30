@@ -24,13 +24,24 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "helloconfigwidget.h"
-#include "helloexceptionlist.h"
+#include "../helloexceptionlist.h"
 #include "hellosettings.h"
 
 #include <KLocalizedString>
 
 #include <QDBusConnection>
 #include <QDBusMessage>
+
+
+#include <KPluginFactory>
+
+
+K_PLUGIN_FACTORY_WITH_JSON(
+    HelloKcmFactory,
+    "kcm_hellodecoration.json",
+    registerPlugin<Hello::ConfigWidget>();
+)
+
 
 // TODO: clean up the connectors and group them like they appear within the UI
 namespace Hello
@@ -342,3 +353,5 @@ namespace Hello
     }
 
 }
+
+#include "helloconfigwidget.moc"
