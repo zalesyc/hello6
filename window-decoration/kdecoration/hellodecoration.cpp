@@ -25,7 +25,6 @@
 
 #include "hello.h"
 #include "hellosettingsprovider.h"
-#include "config-hello.h"
 // #include "config/helloconfigwidget.h"
 
 #include "hellobutton.h"

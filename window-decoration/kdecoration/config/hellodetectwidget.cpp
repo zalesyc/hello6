@@ -35,7 +35,6 @@
 
 #include <QPushButton>
 #include <QMouseEvent>
-#include <config-hello.h>
 #if HELLO_HAVE_X11
 #include <QX11Info>
 #include <xcb/xcb.h>

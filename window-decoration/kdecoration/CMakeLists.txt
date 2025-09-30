@@ -4,10 +4,10 @@ project(hello)
 
 cmake_minimum_required(VERSION 3.14)
 
-find_package(ECM REQUIRED NO_MODULE)
-set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
+# find_package(ECM REQUIRED NO_MODULE)
+# set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
 
-include(KDEInstallDirs)
+# include(KDEInstallDirs)
 
 find_package(Qt6 CONFIG REQUIRED COMPONENTS DBus Core Widgets Gui Core5Compat)
 find_package(KF6Config CONFIG REQUIRED)
@@ -72,8 +72,8 @@ target_link_libraries(hellodecoration
         Qt6::Core
         Qt6::Gui
         Qt6::DBus
-    PRIVATE
         Qt6::Core5Compat
+    PRIVATE
         KDecoration3::KDecoration
         KF6::ConfigCore
         KF6::CoreAddons

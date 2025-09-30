@@ -21,7 +21,7 @@
  *************************************************************************/
 
 #include "hellodecoration.h"
-#include "config-hello.h"
+
 
 #include <QMouseEvent>
 #include <QPaintEvent>

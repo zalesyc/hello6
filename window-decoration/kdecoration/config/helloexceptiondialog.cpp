@@ -25,7 +25,6 @@
 
 #include "helloexceptiondialog.h"
 #include "hellodetectwidget.h"
-#include "config-hello.h"
 
 #if HELLO_HAVE_X11
 #include <QX11Info>
