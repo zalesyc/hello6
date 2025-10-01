@@ -40,7 +40,6 @@ target_link_libraries(kcm_hellodecoration
         KF6::WindowSystem
         KF6::KCMUtils
 )
-# kcmutils_generate_desktop_file(kcm_hellodecoration)
 
 install(TARGETS kcm_hellodecoration DESTINATION ${CMAKE_INSTALL_LIBDIR}/qt6/plugins/org.kde.kdecoration3.kcm)
 

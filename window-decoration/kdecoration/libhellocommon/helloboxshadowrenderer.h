@@ -18,8 +18,6 @@
 
 #pragma once
 
-// own
-// #include "hellocommon_export.h"
 
 // Qt
 #include <QColor>

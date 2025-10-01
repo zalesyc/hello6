@@ -25,7 +25,6 @@
 
 #include "hello.h"
 #include "hellosettingsprovider.h"
-// #include "config/helloconfigwidget.h"
 
 #include "hellobutton.h"
 #include "hellosizegrip.h"
@@ -48,18 +47,11 @@
 #include <QDebug>
 #include <memory>
 
-#if HELLO_HAVE_X11
-#include <QX11Info>
-#endif
-
-#include <cmath>
 
 K_PLUGIN_FACTORY_WITH_JSON(
     HelloDecoFactory,
     "hello.json",
     registerPlugin<Hello::Decoration>();
-    // registerPlugin<Hello::Button>(/*QStringLiteral("button")*/);
-    // registerPlugin<Hello::ConfigWidget>(/*QStringLiteral("kcmodule")*/);
 )
 
 
@@ -347,7 +339,7 @@ namespace Hello
     void Decoration::hoverMoveEvent(QHoverEvent *event)
     {
         if (objectName() != "applet-window-buttons"){
-            const bool groupContains = m_leftButtons->geometry().contains(event->posF()) || m_rightButtons->geometry().contains(event->posF());
+            const bool groupContains = m_leftButtons->geometry().contains(event->position()) || m_rightButtons->geometry().contains(event->position());
             bool buttonContains = m_buttonHovered;
             if (groupContains && !m_buttonHovered){
             for (KDecoration3::DecorationButton *button: m_leftButtons->buttons()+m_rightButtons->buttons()) {
@@ -981,26 +973,8 @@ namespace Hello
     //_________________________________________________________________
     void Decoration::createSizeGrip()
     {
-
         // do nothing if size grip already exist
         if( m_sizeGrip ) return;
-
-        #if HELLO_HAVE_X11
-        if( !QX11Info::isPlatformX11() ) return;
-
-        // access client
-        auto w = window();
-        if( !w ) return;
-
-        if( w->windowId() != 0 )
-        {
-            m_sizeGrip = new SizeGrip( this );
-            connect( w, &KDecoration3::DecoratedWindow::maximizedChanged, this, &Decoration::updateSizeGripVisibility );
-            connect( w, &KDecoration3::DecoratedWindow::shadedChanged, this, &Decoration::updateSizeGripVisibility );
-            connect( w, &KDecoration3::DecoratedWindow::resizeableChanged, this, &Decoration::updateSizeGripVisibility );
-        }
-        #endif
-
     }
 
     //_________________________________________________________________

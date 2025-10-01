@@ -25,6 +25,7 @@
 #include <QPainter>
 
 #include <QtMath>
+#include <utility>
 
 namespace Hello
 {
@@ -320,7 +321,7 @@ QImage BoxShadowRenderer::render() const
     }
 
     QSize canvasSize;
-    for (const Shadow &shadow : qAsConst(m_shadows)) {
+    for (const Shadow &shadow : std::as_const(m_shadows)) {
         canvasSize = canvasSize.expandedTo(
             calculateMinimumShadowTextureSize(m_boxSize, shadow.radius, shadow.offset));
     }
@@ -333,7 +334,7 @@ QImage BoxShadowRenderer::render() const
     boxRect.moveCenter(QRect(QPoint(0, 0), canvasSize).center());
 
     QPainter painter(&canvas);
-    for (const Shadow &shadow : qAsConst(m_shadows)) {
+    for (const Shadow &shadow : std::as_const(m_shadows)) {
         renderShadow(&painter, boxRect, m_borderRadius, shadow.offset, shadow.radius, shadow.color);
     }
     painter.end();

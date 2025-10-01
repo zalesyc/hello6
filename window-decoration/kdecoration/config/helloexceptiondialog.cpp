@@ -26,10 +26,6 @@
 #include "helloexceptiondialog.h"
 #include "hellodetectwidget.h"
 
-#if HELLO_HAVE_X11
-#include <QX11Info>
-#endif
-
 namespace Hello
 {
 
@@ -66,12 +62,7 @@ namespace Hello
 
         connect( m_ui.hideTitleBar, SIGNAL(clicked()), SLOT(updateChanged()) );
 
-        // hide detection dialog on non X11 platforms
-        #if HELLO_HAVE_X11
-        if( !QX11Info::isPlatformX11() ) m_ui.detectDialogButton->hide();
-        #else
         m_ui.detectDialogButton->hide();
-        #endif
     }
 
     //___________________________________________

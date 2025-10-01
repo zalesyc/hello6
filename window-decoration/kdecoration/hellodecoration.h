@@ -33,8 +33,6 @@
 #include <QPropertyAnimation>
 #include <QVariant>
 
-#include <xcb/xcb.h>
-
 namespace KDecoration3
 {
     class DecorationButton;

@@ -21,7 +21,6 @@
  */
 
 #include "hellodecoration.h"
-#include "hellosettings.h"
 #include "hello.h"
 
 #include <KSharedConfig>

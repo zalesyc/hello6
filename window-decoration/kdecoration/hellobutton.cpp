@@ -28,9 +28,6 @@
 
 namespace Hello
 {
-
-    using KDecoration3::ColorRole;
-    using KDecoration3::ColorGroup;
     using KDecoration3::DecorationButtonType;
 
 

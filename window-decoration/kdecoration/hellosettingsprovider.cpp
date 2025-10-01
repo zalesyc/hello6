@@ -19,7 +19,6 @@
  */
 
 #include "hellosettingsprovider.h"
-
 #include "helloexceptionlist.h"
 
 #include <KWindowInfo>

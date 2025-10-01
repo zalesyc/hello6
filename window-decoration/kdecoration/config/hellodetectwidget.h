@@ -88,9 +88,6 @@ namespace Hello
         //* read window properties
         void readWindow( WId window );
 
-        //* find window under cursor
-        WId findWindow();
-
         //* execute
         void executeDialog();
 

@@ -28,10 +28,6 @@
 #include <QWidget>
 #include <QPointer>
 
-#if HELLO_HAVE_X11
-#include <xcb/xcb.h>
-#endif
-
 namespace Hello
 {
 
@@ -54,12 +50,6 @@ namespace Hello
         //* update background color
         void updateActiveState();
 
-        //* update position
-        void updatePosition();
-
-        //* embed into parent widget
-        void embed();
-
         protected:
 
         //*@name event handlers
@@ -74,10 +64,6 @@ namespace Hello
         //@}
 
         private:
-
-        //* send resize event
-        void sendMoveResizeEvent( QPoint );
-
         //* grip size
         enum {
             Offset = 0,
@@ -87,10 +73,6 @@ namespace Hello
         //* decoration
         QPointer<Decoration> m_decoration;
 
-        //* move/resize atom
-        #if HELLO_HAVE_X11
-        xcb_atom_t m_moveResizeAtom = 0;
-        #endif
 
     };
 
