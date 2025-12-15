@@ -9,6 +9,7 @@
     },
     "X-KDE-ConfigModule": "kcm_hellodecoration",
     "org.kde.kdecoration3": {
-        "blur": false
-        }
+        "blur": false,
+        "recommendedBorderSize": "None"
+    }
 }

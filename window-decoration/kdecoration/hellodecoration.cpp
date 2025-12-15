@@ -45,10 +45,7 @@
 #include <QTextStream>
 #include <QTimer>
 #include <QPainterPath>
-#include <kdecoration3/decoration.h>
 #include <memory>
-#include <qcolor.h>
-#include <qnamespace.h>
 
 
 K_PLUGIN_FACTORY_WITH_JSON(
@@ -482,8 +479,7 @@ namespace Hello
         }
 
         setBorders(QMargins(left, top, right, bottom));
-        if (!window()->isMaximized() && roundBottomCorners())
-        {
+        if (!window()->isMaximized() && roundBottomCorners() && hasNoBorders()) {
             setBorderRadius(KDecoration3::BorderRadius(0, 0,customRadius(),customRadius()));
         } else {
             setBorderRadius(KDecoration3::BorderRadius(0));
@@ -492,8 +488,16 @@ namespace Hello
         if (isMaximized()) {
             setBorderOutline(KDecoration3::BorderOutline());
         } else {
-            setBorderOutline(KDecoration3::BorderOutline(1, QColor(127,127,127), KDecoration3::BorderRadius(customRadius())));
+            QColor outlineColor = KColorUtils::mix(window()->color(ColorGroup::Active, ColorRole::TitleBar), fontColor(), 0.2);
+            outlineColor.setAlpha(200);
+            const qreal radius = customRadius();
+            const KDecoration3::BorderRadius outline = KDecoration3::BorderRadius(radius, 
+                                                                                  radius, 
+                                                                                  roundBottomCorners() ? radius : 0, 
+                                                                                  roundBottomCorners() ? radius : 0);
+            setBorderOutline(KDecoration3::BorderOutline(1, outlineColor, outline));
         }
+        
 
         // extended sizes
         const int extSize = s->largeSpacing();
