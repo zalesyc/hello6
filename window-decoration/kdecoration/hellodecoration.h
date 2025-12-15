@@ -119,6 +119,7 @@ namespace Hello
         inline bool invertSeparator() const;
         inline bool drawHighlight() const;
         inline bool borderColors() const;
+        inline bool roundBottomCorners() const;
         //@}
         
         //* check for button hover to aid unison hovering
@@ -253,6 +254,9 @@ namespace Hello
 
     bool Decoration::borderColors() const
     { return m_internalSettings->borderColors(); }
+
+    bool Decoration::roundBottomCorners() const
+    { return m_internalSettings->roundBottomCorners(); }
 
 }
 

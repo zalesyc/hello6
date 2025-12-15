@@ -44,8 +44,11 @@
 #include <QPainter>
 #include <QTextStream>
 #include <QTimer>
-#include <QDebug>
+#include <QPainterPath>
+#include <kdecoration3/decoration.h>
 #include <memory>
+#include <qcolor.h>
+#include <qnamespace.h>
 
 
 K_PLUGIN_FACTORY_WITH_JSON(
@@ -479,6 +482,18 @@ namespace Hello
         }
 
         setBorders(QMargins(left, top, right, bottom));
+        if (!window()->isMaximized() && roundBottomCorners())
+        {
+            setBorderRadius(KDecoration3::BorderRadius(0, 0,customRadius(),customRadius()));
+        } else {
+            setBorderRadius(KDecoration3::BorderRadius(0));
+        }
+
+        if (isMaximized()) {
+            setBorderOutline(KDecoration3::BorderOutline());
+        } else {
+            setBorderOutline(KDecoration3::BorderOutline(1, QColor(127,127,127), KDecoration3::BorderRadius(customRadius())));
+        }
 
         // extended sizes
         const int extSize = s->largeSpacing();
@@ -625,11 +640,11 @@ namespace Hello
         // draw highlight box
         // TODO: make this behave like the size grip which is drawn above any content inside the window frame
         if( drawHighlight() ){
-            const QRect titleRect(QPoint(0, 0), QSize(size().width(), borderTop()));
+            const QRectF titleRect(QPointF(0, 0), QSizeF(size().width(), borderTop()));
             const QColor titleBarColor = (  this->titleBarColor() );
-            const QRect windowRect( 
-                QPoint(0, 0), 
-                QSize( size().width(), size().height() ) );
+            const QRectF windowRect( 
+                QPointF(0, 0), 
+                QSizeF( size().width(), size().height() ) );
             QLinearGradient gradient( 0, 0, 0, titleRect.height() );
             gradient.setColorAt(0.0, titleBarColor.lighter(200));
             gradient.setColorAt(0.25, titleBarColor);
@@ -651,7 +666,7 @@ namespace Hello
     void Decoration::paintTitleBar(QPainter *painter, const QRectF &repaintRegion)
     {
         const auto w = window();
-        const QRectF titleRect(QPoint(0, 0), QSize(size().width(), borderTop()));
+        const QRectF titleRect(QPoint(0, 0), QSizeF(size().width(), borderTop()));
         const QColor titleBarColor = (  this->titleBarColor() );
         auto l = m_internalSettings->drawTitleHighlight();
 
@@ -876,14 +891,13 @@ namespace Hello
                 return c;
             };
 
-            const QSize boxSize = BoxShadowRenderer::calculateMinimumBoxSize(params.shadow1.radius)
+            const QSizeF boxSize = BoxShadowRenderer::calculateMinimumBoxSize(params.shadow1.radius)
                 .expandedTo(BoxShadowRenderer::calculateMinimumBoxSize(params.shadow2.radius));
 
 
             BoxShadowRenderer shadowRenderer;
             shadowRenderer.setBorderRadius(customRadius() + 0.5);
             shadowRenderer.setBoxSize(boxSize);
-            shadowRenderer.setDevicePixelRatio(1.0); // TODO: Create HiDPI shadows?
 
             qreal strength = static_cast<qreal>(g_shadowStrength) / 255.0;
 
@@ -904,67 +918,46 @@ namespace Hello
 
             QImage shadowTexture = shadowRenderer.render();
 
-            QPainter painter(&shadowTexture);
-            painter.setRenderHint(QPainter::Antialiasing);
+            const QRectF outerRect = shadowTexture.rect();
 
-            const QRect outerRect = shadowTexture.rect();
-
-            QRect boxRect(QPoint(0, 0), boxSize);
+            QRectF boxRect(QPoint(0, 0), boxSize);
             boxRect.moveCenter(outerRect.center());
 
-
             // Mask out inner rect.
-            const QMargins padding = QMargins(
-                boxRect.left() - outerRect.left() - Metrics::Shadow_Overlap - params.offset.x(),
-                boxRect.top() - outerRect.top() - Metrics::Shadow_Overlap - params.offset.y(),
-                outerRect.right() - boxRect.right() - Metrics::Shadow_Overlap + params.offset.x(),
-                outerRect.bottom() - boxRect.bottom() - Metrics::Shadow_Overlap + params.offset.y());
-            const QRect innerRect = outerRect - padding;   
+            const QMarginsF padding = QMarginsF(
+                boxRect.left() - outerRect.left() - (qreal)Metrics::Shadow_Overlap - params.offset.x(),
+                boxRect.top() - outerRect.top() - (qreal)Metrics::Shadow_Overlap - params.offset.y(),
+                outerRect.right() - boxRect.right() - (qreal)Metrics::Shadow_Overlap + params.offset.x(),
+                outerRect.bottom() - boxRect.bottom() - (qreal)Metrics::Shadow_Overlap + params.offset.y());
 
-            // const int cHeight = w->height();
-            // const int cWidth = w->width();
-            const QRect titleRect(
-                QPoint(
-                    boxRect.left() - outerRect.left() - Metrics::Shadow_Overlap - params.offset.x(), 
-                    boxRect.top() - outerRect.top() - Metrics::Shadow_Overlap - params.offset.y()
-                ), 
-                QSize(boxRect.width() + (outerRect.left() + Metrics::Shadow_Overlap + params.offset.x())*2, borderTop()));
+            QRectF innerRect = outerRect - padding;   
+            innerRect.adjust(0.5,0.5, -0.5, -0.5);
 
-            QColor windowColor = w->palette().color(QPalette::Window);
-            int y = 0.2126*windowColor.red()+0.7152*windowColor.green()+0.0722*windowColor.blue();
+            // mask out the window from the shadow
+            QPainter painter(&shadowTexture);
+            painter.setRenderHint(QPainter::Antialiasing);
             painter.setPen(Qt::NoPen);
             painter.setBrush(Qt::black);
-            if(y < 180){
-                painter.setCompositionMode(QPainter::CompositionMode_Darken);
-            } else {
-                painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+            painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
 
+            if (roundBottomCorners()) { 
+                painter.drawRoundedRect(innerRect, customRadius() + 0.5, customRadius() + 0.5);               
+            } else {            
+                // painter.drawRect(innerRect);
+                QPainterPath path;
+                path.setFillRule(Qt::WindingFill);
+                path.addRoundedRect(innerRect, customRadius() + 0.5, customRadius() + 0.5);
+                path.addRect(innerRect.adjusted(0, customRadius(), 0, 0));
+                painter.drawPath(path);
             }
-            painter.drawRoundedRect(
-                w->isShaded() ? titleRect : innerRect,
-                customRadius() + 0.5,
-                customRadius() + 0.5);
-
-            // Draw outline            
-            if(y < 180){
-                painter.setPen(g_shadowColor);
-                painter.setCompositionMode(QPainter::CompositionMode_Darken);
-            } else {
-                painter.setPen(withOpacity(g_shadowColor, 0.6 * strength));
-                painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-            }
-            painter.setBrush(Qt::NoBrush);
-            painter.drawRoundedRect(
-                w->isShaded() ? titleRect : innerRect,
-                customRadius() - 0.5,
-                customRadius() - 0.5);
 
             painter.end();
 
             sShadow = std::make_shared<KDecoration3::DecorationShadow>();
             sShadow->setPadding(padding);
-            sShadow->setInnerShadowRect(QRect(outerRect.center(), QSize(1, 1)));
+            sShadow->setInnerShadowRect(QRectF(outerRect.center(), QSizeF(1, 1)));
             sShadow->setShadow(shadowTexture);
+
         }
 
         setShadow(sShadow);

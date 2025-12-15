@@ -1,23 +1,10 @@
 /*
- * Copyright (C) 2018 Vlad Zagorodniy <vladzzag@gmail.com>
+ * SPDX-FileCopyrightText: 2018 Vlad Zahorodnii <vlad.zahorodnii@kde.org>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #pragma once
-
 
 // Qt
 #include <QColor>
@@ -27,7 +14,6 @@
 
 namespace Hello
 {
-
 class BoxShadowRenderer
 {
 public:
@@ -37,7 +23,7 @@ public:
      * Set the size of the box.
      * @param size The size of the box.
      **/
-    void setBoxSize(const QSize &size);
+    void setBoxSize(const QSizeF &size);
 
     /**
      * Set the radius of box' corners.
@@ -46,18 +32,12 @@ public:
     void setBorderRadius(qreal radius);
 
     /**
-     * Set the device pixel ratio of the resulting shadow texture.
-     * @param dpr The device pixel ratio.
-     **/
-    void setDevicePixelRatio(qreal dpr);
-
-    /**
      * Add a shadow.
      * @param offset The offset of the shadow.
      * @param radius The blur radius.
      * @param color The color of the shadow.
      **/
-    void addShadow(const QPoint &offset, int radius, const QColor &color);
+    void addShadow(const QPointF &offset, double radius, const QColor &color);
 
     /**
      * Render the shadow.
@@ -84,16 +64,15 @@ public:
      * @param radius The blur radius.
      * @param offset The offset of the shadow.
      **/
-    static QSize calculateMinimumShadowTextureSize(const QSize &boxSize, int radius, const QPoint &offset);
+    static QSizeF calculateMinimumShadowTextureSize(const QSizeF &boxSize, double radius, const QPointF &offset);
 
 private:
-    QSize m_boxSize;
+    QSizeF m_boxSize;
     qreal m_borderRadius = 0.0;
-    qreal m_dpr = 1.0;
 
     struct Shadow {
-        QPoint offset;
-        int radius;
+        QPointF offset;
+        double radius;
         QColor color;
     };
 

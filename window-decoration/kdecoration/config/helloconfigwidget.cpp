@@ -34,6 +34,7 @@
 
 
 #include <KPluginFactory>
+#include <qobjectdefs.h>
 
 
 K_PLUGIN_FACTORY_WITH_JSON(
@@ -69,6 +70,7 @@ namespace Hello
         connect( m_ui.customColorSelect, SIGNAL(changed(QColor)), SLOT(updateChanged()) );
         connect( m_ui.drawHighlight, SIGNAL(clicked()), SLOT(updateChanged()) );
         connect( m_ui.drawTitleHighlight, SIGNAL(clicked()), SLOT(updateChanged()) );
+        connect( m_ui.roundBottomCorners, SIGNAL(clicked()), SLOT(updateChanged()));
 
         // titlebar settings
         connect( m_ui.titleBarHeightSpin, SIGNAL(valueChanged(int)), SLOT(updateChanged()) );
@@ -136,6 +138,7 @@ namespace Hello
         m_ui.buttonMarginSpin->setValue( qreal(m_internalSettings->buttonMarginSpin()) );
         m_ui.titleBarHeightSpin->setValue( qreal(m_internalSettings->titleBarHeightSpin()) );
         m_ui.borderRadiusSpin->setValue( qreal(m_internalSettings->borderRadiusSpin()) );
+        m_ui.roundBottomCorners->setChecked(m_internalSettings->roundBottomCorners());
 
         m_ui.buttonCustomColor->setChecked( m_internalSettings->buttonCustomColor() );
         m_ui.customCloseColor->setColor( m_internalSettings->customCloseColor() );
@@ -194,6 +197,7 @@ namespace Hello
         m_internalSettings->setButtonMarginSpin( qreal(m_ui.buttonMarginSpin->value()) );
         m_internalSettings->setTitleBarHeightSpin( qreal(m_ui.titleBarHeightSpin->value()) );
         m_internalSettings->setBorderRadiusSpin( qreal(m_ui.borderRadiusSpin->value()) );
+        m_internalSettings->setRoundBottomCorners( m_ui.roundBottomCorners->isChecked() );
 
         m_internalSettings->setButtonCustomColor( m_ui.buttonCustomColor->isChecked() );
         m_internalSettings->setCustomCloseColor( m_ui.customCloseColor->color() );
@@ -265,6 +269,7 @@ namespace Hello
         m_ui.buttonMarginSpin->setValue( qreal(m_internalSettings->buttonMarginSpin()) );
         m_ui.titleBarHeightSpin->setValue( qreal(m_internalSettings->titleBarHeightSpin()) );
         m_ui.borderRadiusSpin->setValue( qreal(m_internalSettings->borderRadiusSpin()) );
+        m_ui.roundBottomCorners->setChecked( m_internalSettings->roundBottomCorners() );
 
         m_ui.buttonCustomColor->setChecked( m_internalSettings->buttonCustomColor() );
         m_ui.customCloseColor->setColor( m_internalSettings->customCloseColor() );
@@ -313,6 +318,7 @@ namespace Hello
         else if( qreal(m_ui.buttonMarginSpin->value() ) != m_internalSettings->buttonMarginSpin() ) modified = true;
         else if( qreal(m_ui.titleBarHeightSpin->value() ) != m_internalSettings->titleBarHeightSpin() ) modified = true;
         else if( qreal(m_ui.borderRadiusSpin->value() ) != m_internalSettings->borderRadiusSpin() ) modified = true;
+        else if( m_ui.roundBottomCorners->isChecked() != m_internalSettings->roundBottomCorners() ) modified = true;
 
         // custom button colors
         else if( m_ui.buttonCustomColor->isChecked() != m_internalSettings->buttonCustomColor() ) modified = true;
