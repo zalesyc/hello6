@@ -4,7 +4,8 @@ A dark and light colorscheme to perfectly match the hello. suite of things.
 
 ![](preview.png?raw=true)
 
-## Installation
+## Manual installation
+**Only if you want to install just the color scheme, if you installed the entire theme, this is already installed.**
 
 Copy the files to your local directory:
 
