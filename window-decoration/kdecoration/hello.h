@@ -25,11 +25,12 @@
 
 #include <QSharedPointer>
 #include <QList>
+#include <memory>
 
 namespace Hello
 {
     //* convenience typedefs
-    using InternalSettingsPtr = QSharedPointer<InternalSettings>;
+    using InternalSettingsPtr = std::shared_ptr<InternalSettings>;
     using InternalSettingsList = QList<InternalSettingsPtr>;
     using InternalSettingsListIterator = QListIterator<InternalSettingsPtr>;
 

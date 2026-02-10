@@ -2,14 +2,14 @@
     "KPlugin": {
         "Description": "hello window decoration",
         "EnabledByDefault": true,
-        "Id": "org.kde.hello",
         "Name": "hello",
         "ServiceTypes": [
-            "org.kde.kdecoration2"
+            "org.kde.kdecoration3"
         ]
     },
-    "org.kde.kdecoration2": {
+    "X-KDE-ConfigModule": "kcm_hellodecoration",
+    "org.kde.kdecoration3": {
         "blur": false,
-        "kcmodule": true
+        "recommendedBorderSize": "None"
     }
 }

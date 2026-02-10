@@ -25,7 +25,7 @@
 // IN THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "ui_helloexceptionlistwidget.h"
+#include "ui/ui_helloexceptionlistwidget.h"
 #include "helloexceptionmodel.h"
 
 //* QDialog used to commit selected files

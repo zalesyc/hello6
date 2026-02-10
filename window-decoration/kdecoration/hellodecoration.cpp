@@ -25,18 +25,16 @@
 
 #include "hello.h"
 #include "hellosettingsprovider.h"
-#include "config-hello.h"
-#include "config/helloconfigwidget.h"
 
 #include "hellobutton.h"
 #include "hellosizegrip.h"
 
-#include "helloboxshadowrenderer.h"
+#include "libhellocommon/helloboxshadowrenderer.h"
 
-#include <KDecoration2/DecoratedClient>
-#include <KDecoration2/DecorationButtonGroup>
-#include <KDecoration2/DecorationSettings>
-#include <KDecoration2/DecorationShadow>
+#include <KDecoration3/DecoratedWindow>
+#include <KDecoration3/DecorationButtonGroup>
+#include <KDecoration3/DecorationSettings>
+#include <KDecoration3/DecorationShadow>
 
 #include <KConfigGroup>
 #include <KColorUtils>
@@ -46,20 +44,14 @@
 #include <QPainter>
 #include <QTextStream>
 #include <QTimer>
-#include <QDebug>
+#include <QPainterPath>
+#include <memory>
 
-#if HELLO_HAVE_X11
-#include <QX11Info>
-#endif
-
-#include <cmath>
 
 K_PLUGIN_FACTORY_WITH_JSON(
     HelloDecoFactory,
     "hello.json",
     registerPlugin<Hello::Decoration>();
-    registerPlugin<Hello::Button>(QStringLiteral("button"));
-    registerPlugin<Hello::ConfigWidget>(QStringLiteral("kcmodule"));
 )
 
 
@@ -150,20 +142,20 @@ namespace
 namespace Hello
 {
 
-    using KDecoration2::ColorRole;
-    using KDecoration2::ColorGroup;
+    using KDecoration3::ColorRole;
+    using KDecoration3::ColorGroup;
 
     //________________________________________________________________
     static int g_sDecoCount = 0;
     static int g_shadowSizeEnum = InternalSettings::ShadowLarge;
     static int g_shadowStrength = 255;
     static QColor g_shadowColor = Qt::black;
-    static QSharedPointer<KDecoration2::DecorationShadow> g_sActiveShadow;
-    static QSharedPointer<KDecoration2::DecorationShadow> g_sInactiveShadow;
+    static std::shared_ptr<KDecoration3::DecorationShadow> g_sActiveShadow;
+    static std::shared_ptr<KDecoration3::DecorationShadow> g_sInactiveShadow;
 
     //________________________________________________________________
     Decoration::Decoration(QObject *parent, const QVariantList &args)
-        : KDecoration2::Decoration(parent, args)
+        : KDecoration3::Decoration(parent, args)
         , m_animation( new QPropertyAnimation( this ) )
     {
         g_sDecoCount++;
@@ -175,8 +167,8 @@ namespace Hello
         g_sDecoCount--;
         if (g_sDecoCount == 0) {
             // last deco destroyed, clean up shadow
-            g_sActiveShadow.clear();
-            g_sInactiveShadow.clear();
+            g_sActiveShadow.reset();
+            g_sInactiveShadow.reset();
         }
 
         deleteSizeGrip();
@@ -196,8 +188,8 @@ namespace Hello
     //________________________________________________________________
     QColor Decoration::titleBarColor() const
     {
-        auto c = client().data();
-        if( hideTitleBar() ) return c->color( ColorGroup::Inactive, ColorRole::TitleBar );
+        auto w = window();
+        if( hideTitleBar() ) return w->color( ColorGroup::Inactive, ColorRole::TitleBar );
         
         // if user specified a custom color per window
         else if ( customColorBoxEx() )
@@ -218,13 +210,13 @@ namespace Hello
                 if( m_animation->state() == QPropertyAnimation::Running )
                 {
                     return KColorUtils::mix(
-                        c->color( ColorGroup::Inactive, ColorRole::TitleBar ),
-                        c->color( ColorGroup::Active, ColorRole::TitleBar ),
+                        w->color( ColorGroup::Inactive, ColorRole::TitleBar ),
+                        w->color( ColorGroup::Active, ColorRole::TitleBar ),
                         m_opacity );
-                } else return c->color( c->isActive() ? ColorGroup::Active : ColorGroup::Inactive, ColorRole::TitleBar );
+                } else return w->color( w->isActive() ? ColorGroup::Active : ColorGroup::Inactive, ColorRole::TitleBar );
             case 1:
                 // use window color as titlebar color
-                return c->palette().color(QPalette::Window);
+                return w->palette().color(QPalette::Window);
         }
     }
 
@@ -232,9 +224,9 @@ namespace Hello
     QColor Decoration::outlineColor() const
     {
         // despite the function's name, this is the titlebar separator
-        auto c( client().data() );
+        auto w =  window();
         if( ( !m_internalSettings->drawTitleBarSeparator() && invertSeparator() ) || ( m_internalSettings->drawTitleBarSeparator() && !invertSeparator() ) ){
-            if( c->isActive() ) return titleBarColor().lighter(70);
+            if( w->isActive() ) return titleBarColor().lighter(70);
             else return titleBarColor().lighter(85);
         } else { 
             return QColor(); 
@@ -248,7 +240,7 @@ namespace Hello
         QColor color = ( this->titleBarColor() );
         int y = 0.2126*color.red()+0.7152*color.green()+0.0722*color.blue();
         QColor newFont ( forceBrightFonts() ? brightFont : y > 128 ? color.lighter(40) : brightFont );
-        auto c = client().data();
+        auto w = window();
         if( m_animation->state() == QPropertyAnimation::Running )
         {
             if ( m_internalSettings->matchTitleBarColor() || customColorBoxEx() ){
@@ -258,15 +250,15 @@ namespace Hello
                     m_opacity );
             } else {
                 return KColorUtils::mix(
-                    c->color(ColorGroup::Inactive, ColorRole::Foreground ),
-                    c->color(ColorGroup::Active, ColorRole::Foreground ),
+                    w->color(ColorGroup::Inactive, ColorRole::Foreground ),
+                    w->color(ColorGroup::Active, ColorRole::Foreground ),
                     m_opacity );
             }
         } else {
             if ( m_internalSettings->matchTitleBarColor() || customColorBoxEx() ){
-                return c->isActive() ? newFont : forceBrightFonts() ? color.lighter(140) : y > 128 ? newFont.lighter(140) : color.lighter(140);
+                return w->isActive() ? newFont : forceBrightFonts() ? color.lighter(140) : y > 128 ? newFont.lighter(140) : color.lighter(140);
             } else {
-                return  c->color( c->isActive() ? ColorGroup::Active : ColorGroup::Inactive, ColorRole::Foreground );
+                return  w->color( w->isActive() ? ColorGroup::Active : ColorGroup::Inactive, ColorRole::Foreground );
 
             }
         }
@@ -274,9 +266,9 @@ namespace Hello
     }
 
     //________________________________________________________________
-    void Decoration::init()
+    bool Decoration::init()
     {
-        auto c = client().data();
+        auto w = window();
 
         // active state change animation
         m_animation->setStartValue( 0 );
@@ -288,27 +280,27 @@ namespace Hello
         reconfigure();
         updateTitleBar();
         auto s = settings();
-        connect(s.data(), &KDecoration2::DecorationSettings::borderSizeChanged, this, &Decoration::recalculateBorders);
+        connect(s.get(), &KDecoration3::DecorationSettings::borderSizeChanged, this, &Decoration::recalculateBorders);
 
         // a change in font might cause the borders to change
-        connect(s.data(), &KDecoration2::DecorationSettings::fontChanged, this, &Decoration::recalculateBorders);
-        connect(s.data(), &KDecoration2::DecorationSettings::spacingChanged, this, &Decoration::recalculateBorders);
+        connect(s.get(), &KDecoration3::DecorationSettings::fontChanged, this, &Decoration::recalculateBorders);
+        connect(s.get(), &KDecoration3::DecorationSettings::spacingChanged, this, &Decoration::recalculateBorders);
 
         // buttons
-        connect(s.data(), &KDecoration2::DecorationSettings::spacingChanged, this, &Decoration::updateButtonsGeometryDelayed);
-        connect(s.data(), &KDecoration2::DecorationSettings::decorationButtonsLeftChanged, this, &Decoration::updateButtonsGeometryDelayed);
-        connect(s.data(), &KDecoration2::DecorationSettings::decorationButtonsRightChanged, this, &Decoration::updateButtonsGeometryDelayed);
+        connect(s.get(), &KDecoration3::DecorationSettings::spacingChanged, this, &Decoration::updateButtonsGeometryDelayed);
+        connect(s.get(), &KDecoration3::DecorationSettings::decorationButtonsLeftChanged, this, &Decoration::updateButtonsGeometryDelayed);
+        connect(s.get(), &KDecoration3::DecorationSettings::decorationButtonsRightChanged, this, &Decoration::updateButtonsGeometryDelayed);
 
         // full reconfiguration
-        connect(s.data(), &KDecoration2::DecorationSettings::reconfigured, this, &Decoration::reconfigure);
-        connect(s.data(), &KDecoration2::DecorationSettings::reconfigured, SettingsProvider::self(), &SettingsProvider::reconfigure, Qt::UniqueConnection );
-        connect(s.data(), &KDecoration2::DecorationSettings::reconfigured, this, &Decoration::updateButtonsGeometryDelayed);
+        connect(s.get(), &KDecoration3::DecorationSettings::reconfigured, this, &Decoration::reconfigure);
+        connect(s.get(), &KDecoration3::DecorationSettings::reconfigured, SettingsProvider::self(), &SettingsProvider::reconfigure, Qt::UniqueConnection );
+        connect(s.get(), &KDecoration3::DecorationSettings::reconfigured, this, &Decoration::updateButtonsGeometryDelayed);
 
-        connect(c, &KDecoration2::DecoratedClient::adjacentScreenEdgesChanged, this, &Decoration::recalculateBorders);
-        connect(c, &KDecoration2::DecoratedClient::maximizedHorizontallyChanged, this, &Decoration::recalculateBorders);
-        connect(c, &KDecoration2::DecoratedClient::maximizedVerticallyChanged, this, &Decoration::recalculateBorders);
-        connect(c, &KDecoration2::DecoratedClient::shadedChanged, this, &Decoration::recalculateBorders);
-        connect(c, &KDecoration2::DecoratedClient::captionChanged, this, 
+        connect(w, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged, this, &Decoration::recalculateBorders);
+        connect(w, &KDecoration3::DecoratedWindow::maximizedHorizontallyChanged, this, &Decoration::recalculateBorders);
+        connect(w, &KDecoration3::DecoratedWindow::maximizedVerticallyChanged, this, &Decoration::recalculateBorders);
+        connect(w, &KDecoration3::DecoratedWindow::shadedChanged, this, &Decoration::recalculateBorders);
+        connect(w, &KDecoration3::DecoratedWindow::captionChanged, this, 
             [this]()
             {
                 // update the caption area
@@ -316,21 +308,23 @@ namespace Hello
             }
         );
 
-        connect(c, &KDecoration2::DecoratedClient::activeChanged, this, &Decoration::updateAnimationState);
-        connect(c, &KDecoration2::DecoratedClient::widthChanged, this, &Decoration::updateTitleBar);
-        connect(c, &KDecoration2::DecoratedClient::maximizedChanged, this, &Decoration::updateTitleBar);
-        connect(c, &KDecoration2::DecoratedClient::maximizedChanged, this, &Decoration::setOpaque);
+        connect(w, &KDecoration3::DecoratedWindow::activeChanged, this, &Decoration::updateAnimationState);
+        connect(w, &KDecoration3::DecoratedWindow::widthChanged, this, &Decoration::updateTitleBar);
+        connect(w, &KDecoration3::DecoratedWindow::maximizedChanged, this, &Decoration::updateTitleBar);
+        connect(w, &KDecoration3::DecoratedWindow::maximizedChanged, this, &Decoration::setOpaque);
 
-        connect(c, &KDecoration2::DecoratedClient::widthChanged, this, &Decoration::updateButtonsGeometry);
-        connect(c, &KDecoration2::DecoratedClient::maximizedChanged, this, &Decoration::updateButtonsGeometry);
-        connect(c, &KDecoration2::DecoratedClient::adjacentScreenEdgesChanged, this, &Decoration::updateButtonsGeometry);
-        connect(c, &KDecoration2::DecoratedClient::shadedChanged, this, &Decoration::updateButtonsGeometry);
+        connect(w, &KDecoration3::DecoratedWindow::widthChanged, this, &Decoration::updateButtonsGeometry);
+        connect(w, &KDecoration3::DecoratedWindow::maximizedChanged, this, &Decoration::updateButtonsGeometry);
+        connect(w, &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged, this, &Decoration::updateButtonsGeometry);
+        connect(w, &KDecoration3::DecoratedWindow::shadedChanged, this, &Decoration::updateButtonsGeometry);
  
-        connect(c, &KDecoration2::DecoratedClient::activeChanged, this, &Decoration::createShadow);
-        connect(c, &KDecoration2::DecoratedClient::shadedChanged, this, &Decoration::createShadow);
+        connect(w, &KDecoration3::DecoratedWindow::activeChanged, this, &Decoration::createShadow);
+        connect(w, &KDecoration3::DecoratedWindow::shadedChanged, this, &Decoration::createShadow);
 
         createButtons();
         createShadow();
+
+        return true;
     }
 
     //________________________________________________________________
@@ -345,10 +339,10 @@ namespace Hello
     void Decoration::hoverMoveEvent(QHoverEvent *event)
     {
         if (objectName() != "applet-window-buttons"){
-            const bool groupContains = m_leftButtons->geometry().contains(event->posF()) || m_rightButtons->geometry().contains(event->posF());
+            const bool groupContains = m_leftButtons->geometry().contains(event->position()) || m_rightButtons->geometry().contains(event->position());
             bool buttonContains = m_buttonHovered;
             if (groupContains && !m_buttonHovered){
-            for (KDecoration2::DecorationButton *button: m_leftButtons->buttons()+m_rightButtons->buttons()) {
+            for (KDecoration3::DecorationButton *button: m_leftButtons->buttons()+m_rightButtons->buttons()) {
                 buttonContains = true;
                 break;
             }
@@ -356,16 +350,16 @@ namespace Hello
 
             setButtonHovered(groupContains && buttonContains);
         }
-        KDecoration2::Decoration::hoverMoveEvent(event);
+        KDecoration3::Decoration::hoverMoveEvent(event);
     }
 
     //________________________________________________________________
     void Decoration::updateTitleBar()
     {
         auto s = settings();
-        auto c = client().data();
+        auto w = window();
         const bool maximized = isMaximized();
-        const int width =  maximized ? c->width() : c->width() - 2*s->smallSpacing()*customButtonMargin();
+        const int width =  maximized ? w->width() : w->width() - 2*s->smallSpacing()*customButtonMargin();
         const int height = maximized ? borderTop() : borderTop() - s->smallSpacing()*customTitleBarHeight();
         const int x = maximized ? 0 : s->smallSpacing()*customButtonMargin();
         const int y = maximized ? 0 : s->smallSpacing()*customTitleBarHeight();
@@ -378,8 +372,8 @@ namespace Hello
         if( m_internalSettings->animationsEnabled() )
         {
 
-            auto c = client().data();
-            m_animation->setDirection( c->isActive() ? QPropertyAnimation::Forward : QPropertyAnimation::Backward );
+            auto w = window();
+            m_animation->setDirection( w->isActive() ? QPropertyAnimation::Forward : QPropertyAnimation::Backward );
             if( m_animation->state() != QPropertyAnimation::Running ) m_animation->start();
 
         } else {
@@ -392,9 +386,9 @@ namespace Hello
     //________________________________________________________________
     void Decoration::updateSizeGripVisibility()
     {
-        auto c = client().data();
+        auto w = window();
         if( m_sizeGrip )
-        { m_sizeGrip->setVisible( c->isResizeable() && !isMaximized() && !c->isShaded() ); }
+        { m_sizeGrip->setVisible( w->isResizeable() && !isMaximized() && !w->isShaded() ); }
     }
 
     //________________________________________________________________
@@ -419,16 +413,16 @@ namespace Hello
         } else {
 
             switch (settings()->borderSize()) {
-                case KDecoration2::BorderSize::None: return 0;
+                case KDecoration3::BorderSize::None: return 0;
                 default:
-                case KDecoration2::BorderSize::NoSides: return bottom ? qMax(4, baseSize) : 0;
-                case KDecoration2::BorderSize::Tiny: return bottom ? qMax(4, baseSize) : baseSize;
-                case KDecoration2::BorderSize::Normal: return baseSize*2;
-                case KDecoration2::BorderSize::Large: return baseSize*3;
-                case KDecoration2::BorderSize::VeryLarge: return baseSize*4;
-                case KDecoration2::BorderSize::Huge: return baseSize*5;
-                case KDecoration2::BorderSize::VeryHuge: return baseSize*6;
-                case KDecoration2::BorderSize::Oversized: return baseSize*10;
+                case KDecoration3::BorderSize::NoSides: return bottom ? qMax(4, baseSize) : 0;
+                case KDecoration3::BorderSize::Tiny: return bottom ? qMax(4, baseSize) : baseSize;
+                case KDecoration3::BorderSize::Normal: return baseSize*2;
+                case KDecoration3::BorderSize::Large: return baseSize*3;
+                case KDecoration3::BorderSize::VeryLarge: return baseSize*4;
+                case KDecoration3::BorderSize::Huge: return baseSize*5;
+                case KDecoration3::BorderSize::VeryHuge: return baseSize*6;
+                case KDecoration3::BorderSize::Oversized: return baseSize*10;
 
             }
 
@@ -459,13 +453,13 @@ namespace Hello
     //________________________________________________________________
     void Decoration::recalculateBorders()
     {
-        auto c = client().data();
+        auto w = window();
         auto s = settings();
 
         // left, right and bottom borders
         const int left   = isLeftEdge() ? 0 : borderSize();
         const int right  = isRightEdge() ? 0 : borderSize();
-        const int bottom = (c->isShaded() || isBottomEdge()) ? 0 : borderSize(true);
+        const int bottom = (w->isShaded() || isBottomEdge()) ? 0 : borderSize(true);
 
         int top = 0;
         if( hideTitleBar() ) top = bottom;
@@ -485,6 +479,25 @@ namespace Hello
         }
 
         setBorders(QMargins(left, top, right, bottom));
+        if (!window()->isMaximized() && roundBottomCorners() && hasNoBorders()) {
+            setBorderRadius(KDecoration3::BorderRadius(0, 0,customRadius(),customRadius()));
+        } else {
+            setBorderRadius(KDecoration3::BorderRadius(0));
+        }
+
+        if (isMaximized()) {
+            setBorderOutline(KDecoration3::BorderOutline());
+        } else {
+            QColor outlineColor = KColorUtils::mix(window()->color(ColorGroup::Active, ColorRole::TitleBar), fontColor(), 0.2);
+            outlineColor.setAlpha(200);
+            const qreal radius = customRadius();
+            const KDecoration3::BorderRadius outline = KDecoration3::BorderRadius(radius, 
+                                                                                  radius, 
+                                                                                  roundBottomCorners() ? radius : 0, 
+                                                                                  roundBottomCorners() ? radius : 0);
+            setBorderOutline(KDecoration3::BorderOutline(1, outlineColor, outline));
+        }
+        
 
         // extended sizes
         const int extSize = s->largeSpacing();
@@ -507,8 +520,8 @@ namespace Hello
     //________________________________________________________________
     void Decoration::createButtons()
     {
-        m_leftButtons = new KDecoration2::DecorationButtonGroup(KDecoration2::DecorationButtonGroup::Position::Left, this, &Button::create);
-        m_rightButtons = new KDecoration2::DecorationButtonGroup(KDecoration2::DecorationButtonGroup::Position::Right, this, &Button::create);
+        m_leftButtons = new KDecoration3::DecorationButtonGroup(KDecoration3::DecorationButtonGroup::Position::Left, this, &Button::create);
+        m_rightButtons = new KDecoration3::DecorationButtonGroup(KDecoration3::DecorationButtonGroup::Position::Right, this, &Button::create);
         updateButtonsGeometry();
     }
 
@@ -527,7 +540,7 @@ namespace Hello
         const int verticalOffset = (isTopEdge() ? s->smallSpacing()*customTitleBarHeight():0) + (captionHeight()-buttonHeight())/2;
         const int vPadding = isTopEdge() ? 0 : s->smallSpacing()*customTitleBarHeight();
         const int hPadding = s->smallSpacing()*customButtonMargin();
-        foreach( const QPointer<KDecoration2::DecorationButton>& button, m_leftButtons->buttons() + m_rightButtons->buttons() )
+        foreach( const QPointer<KDecoration3::DecorationButton>& button, m_leftButtons->buttons() + m_rightButtons->buttons() )
         {
             button.data()->setGeometry( QRectF( QPoint( 0, 0 ), QSizeF( bWidth, bHeight ) ) );
             static_cast<Button*>( button.data() )->setOffset( QPointF( 0, verticalOffset ) );
@@ -545,7 +558,7 @@ namespace Hello
             if( isLeftEdge() )
             {
                 // add offsets on the side buttons, to preserve padding, but satisfy Fitts's law
-                auto button = static_cast<Button*>( m_leftButtons->buttons().front().data() );
+                auto button = static_cast<Button*>( m_leftButtons->buttons().front() );
                 button->setGeometry( QRectF( QPoint( 0, 0 ), QSizeF( bWidth + hPadding, bHeight ) ) );
                 button->setFlag( Button::FlagFirstInList );
                 button->setHorizontalOffset( hPadding );
@@ -567,7 +580,7 @@ namespace Hello
             if( isRightEdge() )
             {
 
-                auto button = static_cast<Button*>( m_rightButtons->buttons().back().data() );
+                auto button = static_cast<Button*>( m_rightButtons->buttons().back() );
                 button->setGeometry( QRectF( QPoint( 0, 0 ), QSizeF( bWidth + hPadding, bHeight ) ) );
                 button->setFlag( Button::FlagLastInList );
 
@@ -582,14 +595,14 @@ namespace Hello
     }
 
     //________________________________________________________________
-    void Decoration::paint(QPainter *painter, const QRect &repaintRegion)
+    void Decoration::paint(QPainter *painter, const QRectF &repaintRegion)
     {
         // TODO: optimize based on repaintRegion
-        auto c = client().data();
+        auto w = window();
         auto s = settings();
         
         // paint background
-        if( !c->isShaded() )
+        if( !w->isShaded() )
         {
             painter->fillRect(rect(), Qt::transparent);
             painter->save();
@@ -597,7 +610,7 @@ namespace Hello
             painter->setPen(Qt::NoPen);
             // ANCHOR
             if ( !borderColors() ){
-                painter->setBrush( c->color( c->isActive() ? ColorGroup::Active : ColorGroup::Inactive, ColorRole::Frame ) );
+                painter->setBrush( w->color( w->isActive() ? ColorGroup::Active : ColorGroup::Inactive, ColorRole::Frame ) );
             } else {
                 painter->setBrush( this->titleBarColor() );
             }
@@ -620,9 +633,9 @@ namespace Hello
             painter->save();
             painter->setRenderHint(QPainter::Antialiasing, false);
             painter->setBrush( Qt::NoBrush );
-            painter->setPen( c->isActive() ?
-                c->color( ColorGroup::Active, ColorRole::TitleBar ):
-                c->color( ColorGroup::Inactive, ColorRole::Foreground ) );
+            painter->setPen( w->isActive() ?
+                w->color( ColorGroup::Active, ColorRole::TitleBar ):
+                w->color( ColorGroup::Inactive, ColorRole::Foreground ) );
 
             painter->drawRect( rect().adjusted( 0, 0, -1, -1 ) );
             painter->restore();
@@ -631,11 +644,11 @@ namespace Hello
         // draw highlight box
         // TODO: make this behave like the size grip which is drawn above any content inside the window frame
         if( drawHighlight() ){
-            const QRect titleRect(QPoint(0, 0), QSize(size().width(), borderTop()));
+            const QRectF titleRect(QPointF(0, 0), QSizeF(size().width(), borderTop()));
             const QColor titleBarColor = (  this->titleBarColor() );
-            const QRect windowRect( 
-                QPoint(0, 0), 
-                QSize( size().width(), size().height() ) );
+            const QRectF windowRect( 
+                QPointF(0, 0), 
+                QSizeF( size().width(), size().height() ) );
             QLinearGradient gradient( 0, 0, 0, titleRect.height() );
             gradient.setColorAt(0.0, titleBarColor.lighter(200));
             gradient.setColorAt(0.25, titleBarColor);
@@ -654,10 +667,10 @@ namespace Hello
     }
 
     //________________________________________________________________
-    void Decoration::paintTitleBar(QPainter *painter, const QRect &repaintRegion)
+    void Decoration::paintTitleBar(QPainter *painter, const QRectF &repaintRegion)
     {
-        const auto c = client().data();
-        const QRect titleRect(QPoint(0, 0), QSize(size().width(), borderTop()));
+        const auto w = window();
+        const QRectF titleRect(QPoint(0, 0), QSizeF(size().width(), borderTop()));
         const QColor titleBarColor = (  this->titleBarColor() );
         auto l = m_internalSettings->drawTitleHighlight();
 
@@ -674,7 +687,7 @@ namespace Hello
             int y = 0.2126*color.red()+0.7152*color.green()+0.0722*color.blue();
             const int lfv = y > 128? 104: 110;
             const int gv = y > 128? 95: 90;
-            const int lightfactor = c->isActive()? lfv: 100;
+            const int lightfactor = w->isActive()? lfv: 100;
             QLinearGradient gradient( 0, 0, 0, titleRect.height() );
             if(l){
                 gradient.setColorAt(0.0, titleBarColor.lighter(185) );
@@ -704,7 +717,7 @@ namespace Hello
 
             painter->drawRect(titleRect);
 
-        } else if( c->isShaded() ) {
+        } else if( w->isShaded() ) {
 
             painter->drawRoundedRect(titleRect, customRadius(), customRadius());
 
@@ -723,7 +736,7 @@ namespace Hello
         }
 
         const QColor outlineColor( this->outlineColor() );
-        if( !c->isShaded() && outlineColor.isValid() )
+        if( !w->isShaded() && outlineColor.isValid() )
         {
             // titlebar separator line
             painter->setRenderHint( QPainter::Antialiasing, false );
@@ -739,7 +752,7 @@ namespace Hello
             painter->setFont(s->font());
             painter->setPen( fontColor() );
             const auto cR = captionRect();
-            const QString caption = painter->fontMetrics().elidedText(c->caption(), Qt::ElideMiddle, cR.first.width());
+            const QString caption = painter->fontMetrics().elidedText(w->caption(), Qt::ElideMiddle, cR.first.width());
             painter->drawText(cR.first, cR.second | Qt::TextSingleLine, caption);
         }
 
@@ -799,7 +812,7 @@ namespace Hello
         if( hideTitleBar() ) return qMakePair( QRect(), Qt::AlignCenter );
         else {
 
-            auto c = client().data();
+            auto w = window();
             const int leftOffset = m_leftButtons->buttons().isEmpty() ?
                 customButtonMargin()*settings()->smallSpacing():
                 m_leftButtons->geometry().x() + m_leftButtons->geometry().width() + customButtonMargin()*settings()->smallSpacing();
@@ -829,7 +842,7 @@ namespace Hello
 
                     // full caption rect
                     const QRect fullRect = QRect( 0, yOffset, size().width(), captionHeight() );
-                    QRect boundingRect( settings()->fontMetrics().boundingRect( c->caption()).toRect() );
+                    QRect boundingRect( settings()->fontMetrics().boundingRect( w->caption()).toRect() );
 
                     // text bounding rect
                     boundingRect.setTop( yOffset );
@@ -851,9 +864,9 @@ namespace Hello
     //________________________________________________________________
     void Decoration::createShadow()
     {
-        QSharedPointer<KDecoration2::DecorationShadow> sShadow;
-        auto c = client().data();
-        if ( c->isActive() ) {
+        std::shared_ptr<KDecoration3::DecorationShadow> sShadow;
+        auto w = window();
+        if ( w->isActive() ) {
             sShadow = g_sActiveShadow;
         } else {
             sShadow = g_sInactiveShadow;
@@ -871,7 +884,7 @@ namespace Hello
 
             const CompositeShadowParams params = lookupShadowParams(g_shadowSizeEnum);
             if (params.isNone()) {
-                sShadow.clear();
+                sShadow.reset();
                 setShadow(sShadow);
                 return;
             }
@@ -882,19 +895,18 @@ namespace Hello
                 return c;
             };
 
-            const QSize boxSize = BoxShadowRenderer::calculateMinimumBoxSize(params.shadow1.radius)
+            const QSizeF boxSize = BoxShadowRenderer::calculateMinimumBoxSize(params.shadow1.radius)
                 .expandedTo(BoxShadowRenderer::calculateMinimumBoxSize(params.shadow2.radius));
 
 
             BoxShadowRenderer shadowRenderer;
             shadowRenderer.setBorderRadius(customRadius() + 0.5);
             shadowRenderer.setBoxSize(boxSize);
-            shadowRenderer.setDevicePixelRatio(1.0); // TODO: Create HiDPI shadows?
 
             qreal strength = static_cast<qreal>(g_shadowStrength) / 255.0;
 
             // set shadow strength values for inactive windows
-            if ( !c->isActive() ) {
+            if ( !w->isActive() ) {
                 if(m_internalSettings->inactiveShadowBehaviour() == 0){
                     strength /= 2;
                 } else if (m_internalSettings->inactiveShadowBehaviour() == 1){
@@ -910,67 +922,46 @@ namespace Hello
 
             QImage shadowTexture = shadowRenderer.render();
 
-            QPainter painter(&shadowTexture);
-            painter.setRenderHint(QPainter::Antialiasing);
+            const QRectF outerRect = shadowTexture.rect();
 
-            const QRect outerRect = shadowTexture.rect();
-
-            QRect boxRect(QPoint(0, 0), boxSize);
+            QRectF boxRect(QPoint(0, 0), boxSize);
             boxRect.moveCenter(outerRect.center());
 
-
             // Mask out inner rect.
-            const QMargins padding = QMargins(
-                boxRect.left() - outerRect.left() - Metrics::Shadow_Overlap - params.offset.x(),
-                boxRect.top() - outerRect.top() - Metrics::Shadow_Overlap - params.offset.y(),
-                outerRect.right() - boxRect.right() - Metrics::Shadow_Overlap + params.offset.x(),
-                outerRect.bottom() - boxRect.bottom() - Metrics::Shadow_Overlap + params.offset.y());
-            const QRect innerRect = outerRect - padding;   
+            const QMarginsF padding = QMarginsF(
+                boxRect.left() - outerRect.left() - (qreal)Metrics::Shadow_Overlap - params.offset.x(),
+                boxRect.top() - outerRect.top() - (qreal)Metrics::Shadow_Overlap - params.offset.y(),
+                outerRect.right() - boxRect.right() - (qreal)Metrics::Shadow_Overlap + params.offset.x(),
+                outerRect.bottom() - boxRect.bottom() - (qreal)Metrics::Shadow_Overlap + params.offset.y());
 
-            // const int cHeight = c->height();
-            // const int cWidth = c->width();
-            const QRect titleRect(
-                QPoint(
-                    boxRect.left() - outerRect.left() - Metrics::Shadow_Overlap - params.offset.x(), 
-                    boxRect.top() - outerRect.top() - Metrics::Shadow_Overlap - params.offset.y()
-                ), 
-                QSize(boxRect.width() + (outerRect.left() + Metrics::Shadow_Overlap + params.offset.x())*2, borderTop()));
+            QRectF innerRect = outerRect - padding;   
+            innerRect.adjust(0.5,0.5, -0.5, -0.5);
 
-            QColor windowColor = c->palette().color(QPalette::Window);
-            int y = 0.2126*windowColor.red()+0.7152*windowColor.green()+0.0722*windowColor.blue();
+            // mask out the window from the shadow
+            QPainter painter(&shadowTexture);
+            painter.setRenderHint(QPainter::Antialiasing);
             painter.setPen(Qt::NoPen);
             painter.setBrush(Qt::black);
-            if(y < 180){
-                painter.setCompositionMode(QPainter::CompositionMode_Darken);
-            } else {
-                painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
+            painter.setCompositionMode(QPainter::CompositionMode_DestinationOut);
 
+            if (roundBottomCorners()) { 
+                painter.drawRoundedRect(innerRect, customRadius() + 0.5, customRadius() + 0.5);               
+            } else {            
+                // painter.drawRect(innerRect);
+                QPainterPath path;
+                path.setFillRule(Qt::WindingFill);
+                path.addRoundedRect(innerRect, customRadius() + 0.5, customRadius() + 0.5);
+                path.addRect(innerRect.adjusted(0, customRadius(), 0, 0));
+                painter.drawPath(path);
             }
-            painter.drawRoundedRect(
-                c->isShaded() ? titleRect : innerRect,
-                customRadius() + 0.5,
-                customRadius() + 0.5);
-
-            // Draw outline            
-            if(y < 180){
-                painter.setPen(g_shadowColor);
-                painter.setCompositionMode(QPainter::CompositionMode_Darken);
-            } else {
-                painter.setPen(withOpacity(g_shadowColor, 0.6 * strength));
-                painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
-            }
-            painter.setBrush(Qt::NoBrush);
-            painter.drawRoundedRect(
-                c->isShaded() ? titleRect : innerRect,
-                customRadius() - 0.5,
-                customRadius() - 0.5);
 
             painter.end();
 
-            sShadow = QSharedPointer<KDecoration2::DecorationShadow>::create();
+            sShadow = std::make_shared<KDecoration3::DecorationShadow>();
             sShadow->setPadding(padding);
-            sShadow->setInnerShadowRect(QRect(outerRect.center(), QSize(1, 1)));
+            sShadow->setInnerShadowRect(QRectF(outerRect.center(), QSizeF(1, 1)));
             sShadow->setShadow(shadowTexture);
+
         }
 
         setShadow(sShadow);
@@ -979,26 +970,8 @@ namespace Hello
     //_________________________________________________________________
     void Decoration::createSizeGrip()
     {
-
         // do nothing if size grip already exist
         if( m_sizeGrip ) return;
-
-        #if HELLO_HAVE_X11
-        if( !QX11Info::isPlatformX11() ) return;
-
-        // access client
-        auto c = client().data();
-        if( !c ) return;
-
-        if( c->windowId() != 0 )
-        {
-            m_sizeGrip = new SizeGrip( this );
-            connect( c, &KDecoration2::DecoratedClient::maximizedChanged, this, &Decoration::updateSizeGripVisibility );
-            connect( c, &KDecoration2::DecoratedClient::shadedChanged, this, &Decoration::updateSizeGripVisibility );
-            connect( c, &KDecoration2::DecoratedClient::resizeableChanged, this, &Decoration::updateSizeGripVisibility );
-        }
-        #endif
-
     }
 
     //_________________________________________________________________

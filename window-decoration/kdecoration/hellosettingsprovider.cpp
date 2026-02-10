@@ -19,12 +19,12 @@
  */
 
 #include "hellosettingsprovider.h"
-
 #include "helloexceptionlist.h"
 
 #include <KWindowInfo>
 
 #include <QTextStream>
+#include <QRegExp>
 
 namespace Hello
 {
@@ -75,7 +75,7 @@ namespace Hello
         QString className;
 
         // get the client
-        auto client = decoration->client().data();
+        auto window = decoration->window();
 
         foreach( auto internalSettings, m_exceptions )
         {
@@ -95,7 +95,7 @@ namespace Hello
             {
                 case InternalSettings::ExceptionWindowTitle:
                 {
-                    value = windowTitle.isEmpty() ? (windowTitle = client->caption()):windowTitle;
+                    value = windowTitle.isEmpty() ? (windowTitle = window->caption()):windowTitle;
                     break;
                 }
 
@@ -104,11 +104,12 @@ namespace Hello
                 {
                     if( className.isEmpty() )
                     {
-                        // retrieve class name
-                        KWindowInfo info( client->windowId(), nullptr, NET::WM2WindowClass );
-                        QString window_className( QString::fromUtf8(info.windowClassName()) );
-                        QString window_class( QString::fromUtf8(info.windowClassClass()) );
-                        className = window_className + QStringLiteral(" ") + window_class;
+                        className = window->windowClass();
+                        // // retrieve class name
+                        // KWindowInfo info( client->windowId(), nullptr, NET::WM2WindowClass );
+                        // QString window_className( QString::fromUtf8(info.windowClassName()) );
+                        // QString window_class( QString::fromUtf8(info.windowClassClass()) );
+                        // className = window_className + QStringLiteral(" ") + window_class;
                     }
 
                     value = className;

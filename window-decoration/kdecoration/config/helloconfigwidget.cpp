@@ -24,26 +24,39 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "helloconfigwidget.h"
-#include "helloexceptionlist.h"
+#include "../helloexceptionlist.h"
 #include "hellosettings.h"
 
 #include <KLocalizedString>
 
 #include <QDBusConnection>
 #include <QDBusMessage>
+
+
+#include <KPluginFactory>
+#include <qobjectdefs.h>
+
+
+K_PLUGIN_FACTORY_WITH_JSON(
+    HelloKcmFactory,
+    "kcm_hellodecoration.json",
+    registerPlugin<Hello::ConfigWidget>();
+)
+
+
 // TODO: clean up the connectors and group them like they appear within the UI
 namespace Hello
 {
 
     //_________________________________________________________
-    ConfigWidget::ConfigWidget( QWidget* parent, const QVariantList &args ):
-        KCModule(parent, args),
+    ConfigWidget::ConfigWidget( QObject* parent, const KPluginMetaData &data ):
+        KCModule(parent, data),
         m_configuration( KSharedConfig::openConfig( QStringLiteral( "hellorc" ) ) ),
         m_changed( false )
     {
 
         // configuration
-        m_ui.setupUi( this );
+        m_ui.setupUi( this->widget() );
 
         // track ui changes
         connect( m_ui.titleAlignment, SIGNAL(currentIndexChanged(int)), SLOT(updateChanged()) );
@@ -57,6 +70,7 @@ namespace Hello
         connect( m_ui.customColorSelect, SIGNAL(changed(QColor)), SLOT(updateChanged()) );
         connect( m_ui.drawHighlight, SIGNAL(clicked()), SLOT(updateChanged()) );
         connect( m_ui.drawTitleHighlight, SIGNAL(clicked()), SLOT(updateChanged()) );
+        connect( m_ui.roundBottomCorners, SIGNAL(clicked()), SLOT(updateChanged()));
 
         // titlebar settings
         connect( m_ui.titleBarHeightSpin, SIGNAL(valueChanged(int)), SLOT(updateChanged()) );
@@ -124,6 +138,7 @@ namespace Hello
         m_ui.buttonMarginSpin->setValue( qreal(m_internalSettings->buttonMarginSpin()) );
         m_ui.titleBarHeightSpin->setValue( qreal(m_internalSettings->titleBarHeightSpin()) );
         m_ui.borderRadiusSpin->setValue( qreal(m_internalSettings->borderRadiusSpin()) );
+        m_ui.roundBottomCorners->setChecked(m_internalSettings->roundBottomCorners());
 
         m_ui.buttonCustomColor->setChecked( m_internalSettings->buttonCustomColor() );
         m_ui.customCloseColor->setColor( m_internalSettings->customCloseColor() );
@@ -182,6 +197,7 @@ namespace Hello
         m_internalSettings->setButtonMarginSpin( qreal(m_ui.buttonMarginSpin->value()) );
         m_internalSettings->setTitleBarHeightSpin( qreal(m_ui.titleBarHeightSpin->value()) );
         m_internalSettings->setBorderRadiusSpin( qreal(m_ui.borderRadiusSpin->value()) );
+        m_internalSettings->setRoundBottomCorners( m_ui.roundBottomCorners->isChecked() );
 
         m_internalSettings->setButtonCustomColor( m_ui.buttonCustomColor->isChecked() );
         m_internalSettings->setCustomCloseColor( m_ui.customCloseColor->color() );
@@ -253,6 +269,7 @@ namespace Hello
         m_ui.buttonMarginSpin->setValue( qreal(m_internalSettings->buttonMarginSpin()) );
         m_ui.titleBarHeightSpin->setValue( qreal(m_internalSettings->titleBarHeightSpin()) );
         m_ui.borderRadiusSpin->setValue( qreal(m_internalSettings->borderRadiusSpin()) );
+        m_ui.roundBottomCorners->setChecked( m_internalSettings->roundBottomCorners() );
 
         m_ui.buttonCustomColor->setChecked( m_internalSettings->buttonCustomColor() );
         m_ui.customCloseColor->setColor( m_internalSettings->customCloseColor() );
@@ -301,6 +318,7 @@ namespace Hello
         else if( qreal(m_ui.buttonMarginSpin->value() ) != m_internalSettings->buttonMarginSpin() ) modified = true;
         else if( qreal(m_ui.titleBarHeightSpin->value() ) != m_internalSettings->titleBarHeightSpin() ) modified = true;
         else if( qreal(m_ui.borderRadiusSpin->value() ) != m_internalSettings->borderRadiusSpin() ) modified = true;
+        else if( m_ui.roundBottomCorners->isChecked() != m_internalSettings->roundBottomCorners() ) modified = true;
 
         // custom button colors
         else if( m_ui.buttonCustomColor->isChecked() != m_internalSettings->buttonCustomColor() ) modified = true;
@@ -336,7 +354,10 @@ namespace Hello
     //_______________________________________________
     void ConfigWidget::setChanged( bool value )
     {
-        emit changed( value );
+        // emit changed( value );
+        setNeedsSave(value);
     }
 
 }
+
+#include "helloconfigwidget.moc"

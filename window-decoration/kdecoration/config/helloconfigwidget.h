@@ -25,16 +25,17 @@
 // IN THE SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////
 
-#include "ui_helloconfigurationui.h"
+#include "ui/ui_helloconfigurationui.h"
 #include "helloexceptionlistwidget.h"
 #include "hellosettings.h"
-#include "hello.h"
+#include "../hello.h"
 
 #include <KCModule>
 #include <KSharedConfig>
 
 #include <QWidget>
 #include <QSharedPointer>
+#include <KPluginMetaData>
 
 namespace Hello
 {
@@ -48,7 +49,7 @@ namespace Hello
         public:
 
         //* constructor
-        explicit ConfigWidget( QWidget*, const QVariantList& );
+        explicit ConfigWidget( QObject*, const KPluginMetaData & );
 
         //* destructor
         virtual ~ConfigWidget() = default;

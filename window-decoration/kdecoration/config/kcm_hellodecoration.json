@@ -1,0 +1,13 @@
+{
+    "KPlugin": {
+        "Description": "Hello settings",
+        "Icon": "preferences-system-windows",
+        "Name": "Hello Decoration settings",
+        "ServiceTypes": [
+            "KCModule"
+        ]
+    },
+    "X-KDE-Keywords": "hello,decoration",
+    "X-KDE-ParentApp": "kcontrol",
+    "X-KDE-Weight": 60
+}

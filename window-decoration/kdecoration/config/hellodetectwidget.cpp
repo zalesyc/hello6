@@ -29,17 +29,10 @@
 
 #include "hellodetectwidget.h"
 
-#include "hello.h"
-
 #include <KWindowInfo>
 
 #include <QPushButton>
 #include <QMouseEvent>
-#include <config-hello.h>
-#if HELLO_HAVE_X11
-#include <QX11Info>
-#include <xcb/xcb.h>
-#endif
 
 namespace Hello
 {
@@ -54,18 +47,6 @@ namespace Hello
 
         connect( m_ui.buttonBox->button( QDialogButtonBox::Cancel ), SIGNAL(clicked()), this, SLOT(close()) );
         m_ui.windowClassCheckBox->setChecked( true );
-
-#if HELLO_HAVE_X11
-        if (QX11Info::isPlatformX11()) {
-            // create atom
-            xcb_connection_t* connection( QX11Info::connection() );
-            const QString atomName( QStringLiteral( "WM_STATE" ) );
-            xcb_intern_atom_cookie_t cookie( xcb_intern_atom( connection, false, atomName.size(), qPrintable( atomName ) ) );
-            QScopedPointer<xcb_intern_atom_reply_t, QScopedPointerPodDeleter> reply( xcb_intern_atom_reply( connection, cookie, nullptr) );
-            m_wmStateAtom = reply ? reply->atom : 0;
-        }
-#endif
-
     }
 
     //_________________________________________________________
@@ -138,45 +119,9 @@ namespace Hello
         if( static_cast< QMouseEvent* >( e )->button() != Qt::LeftButton ) return true;
 
         // read window information
-        readWindow( findWindow() );
+        readWindow( 0 );
 
         return true;
-    }
-
-    //_________________________________________________________
-    WId DetectDialog::findWindow()
-    {
-
-        #if HELLO_HAVE_X11
-        if (!QX11Info::isPlatformX11()) {
-            return 0;
-        }
-        // check atom
-        if( !m_wmStateAtom ) return 0;
-
-        xcb_connection_t* connection( QX11Info::connection() );
-        xcb_window_t parent( QX11Info::appRootWindow() );
-
-        // why is there a loop of only 10 here
-        for( int i = 0; i < 10; ++i )
-        {
-
-            // query pointer
-            xcb_query_pointer_cookie_t pointerCookie( xcb_query_pointer( connection, parent ) );
-            QScopedPointer<xcb_query_pointer_reply_t, QScopedPointerPodDeleter> pointerReply( xcb_query_pointer_reply( connection, pointerCookie, nullptr ) );
-            if( !( pointerReply && pointerReply->child ) ) return 0;
-
-            const xcb_window_t child( pointerReply->child );
-            xcb_get_property_cookie_t cookie( xcb_get_property( connection, 0, child, m_wmStateAtom, XCB_GET_PROPERTY_TYPE_ANY, 0, 0 ) );
-            QScopedPointer<xcb_get_property_reply_t, QScopedPointerPodDeleter> reply( xcb_get_property_reply( connection, cookie, nullptr ) );
-            if( reply  && reply->type ) return child;
-            else parent = child;
-
-        }
-        #endif
-
-        return 0;
-
     }
 
 }
